@@ -1,0 +1,75 @@
+.title Acquisition
+.category Cataloging
+.layout labels title="Labels"
+.column bibid hidden
+.column callno sort=callno title="Call Num." width=2
+.column barcode_nmbr sort=barcode_nmbr title="Barcode" width=2
+.column title sort=title func=biblio_link title="Title" width=8
+.column author sort=author title="Author" width=3
+.column create_dt sort=create_dt title="Acq. Date" width=2
+.column collection sort=material title="Collection" width=2
+.column material sort=collection title="Material" width=1
+.column marc_100a hidden
+.column marc_245a hidden
+.column marc_250a hidden
+.column marc_260a hidden
+.column marc_260b hidden
+.column marc_260c hidden
+.parameters
+.	date newer title="After (Date or yesterday)"
+.	date older title="Before"
+.	select collection title="Collection"
+.		item ""
+.		sql
+			select coll.code as value, coll.description as title from collection_dm coll
+.		end sql
+.	end select
+.	select material title="Material"
+.		item ""
+.		sql
+			select mat.code as value, mat.description as title from material_type_dm mat
+.		end sql
+.	end select
+.	order_by
+.		item create_dt title="Date Created" type=date
+.		item title title="Title"
+.		item author title="Author"
+.		item callno expr="concat(call_nmbr1, call_nmbr2, call_nmbr3)" title="Call Num."
+.	end order_by
+.end parameters
+.sql
+	select b.bibid, concat_ws(' ', b.call_nmbr1, b.call_nmbr2, b.call_nmbr3) callno,
+		c.barcode_nmbr, c.create_dt, b.title, b.author,
+		coll.description as collection, mat.description as material,
+		bf100a.field_data as marc_100a,
+		bf245a.field_data as marc_245a,
+		bf250a.field_data as marc_250a,
+		bf260a.field_data as marc_260a,
+		bf260b.field_data as marc_260b,
+		bf260c.field_data as marc_260c
+	from biblio_copy c
+	join biblio b on b.bibid=c.bibid
+	join collection_dm as coll on coll.code=b.collection_cd
+	join material_type_dm as mat on mat.code=b.material_cd
+	left join biblio_field as bf100a on b.bibid = bf100a.bibid AND bf100a.tag = '100' AND bf100a.subfield_cd = 'a'
+	left join biblio_field as bf245a on b.bibid = bf245a.bibid AND bf245a.tag = '245' AND bf245a.subfield_cd = 'a'
+	left join biblio_field as bf250a on b.bibid = bf250a.bibid AND bf250a.tag = '250' AND bf250a.subfield_cd = 'a'
+	left join biblio_field as bf260a on b.bibid = bf260a.bibid AND bf260a.tag = '260' AND bf260a.subfield_cd = 'a'
+	left join biblio_field as bf260b on b.bibid = bf260b.bibid AND bf260b.tag = '260' AND bf260b.subfield_cd = 'b'
+	left join biblio_field as bf260c on b.bibid = bf260c.bibid AND bf260c.tag = '260' AND bf260c.subfield_cd = 'c'
+	where 1=1
+.	if_set newer
+		and c.create_dt >= %newer%
+.	end if_set
+.	if_set older
+		and c.create_dt < %older%
+.	end if_set
+.	if_not_equal collection ""
+		and b.collection_cd = %collection%
+.	end if_not_equal
+.	if_not_equal material ""
+		and b.material_cd = %material%
+.	end if_not_equal
+	group by c.barcode_nmbr, b.title, b.author, b.bibid, c.create_dt
+.	order_by_expr
+.end sql

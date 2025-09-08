@@ -1,0 +1,454 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="OpenBiblio Library Automation System">
+    <title>OpenBiblio Install Instructions</title>
+    <style type="text/css">
+    .notice {
+            margin-left: 50px;
+            margin-right: 50px;
+            border: solid black 1px;
+            background: #ffaaaa;
+            padding: 4px;
+    }
+
+    .new {
+            margin-left: 50px;
+            margin-right: 50px;
+            border: solid black 1px;
+            background: #ffffaa;
+            padding: 4px;
+    }
+
+    h1 {
+            border-bottom: solid black 1px
+    }
+
+    th {
+            text-align: right
+    }
+    </style>
+</head>
+<body bgcolor="#ffffff" topmargin="0" bottommargin="0" leftmargin="0"
+	rightmargin="0" marginheight="0" marginwidth="0">
+	<div style="background: #bebdbe">
+		<img src="images/obiblio_logo.gif" width="170" height="35" border="0">
+	</div>
+	<div style="padding: 8px">
+		<h1>Contents:</h1>
+		<ul>
+			<li><a href="#releaseNotes">Release Notes</a></li>
+			<li><a href="#sysReq">System requirements</a></li>
+			<li><a href="#install">Install Instructions</a></li>
+			<li><a href="#userlogin">Setup of Userlogin</a></li>
+			<li><a href="#update">Updating from a previous version of
+					OpenBiblio</a></li>
+		</ul>
+
+		<h1 id="releaseNotes">Release Notes:</h1>
+		<p>Version 0.8.1 is recommended for new installs. Updating older
+			versions of OpenBiblio is highly recommended because the most
+			important changes are for hardening security.</p>
+		<p>
+			See the <a href="ChangeLog">ChangeLog</a> for more details.
+		</p>
+                Update-Dringlichkeiten:
+		<ul>
+			<li>Versions before 0.5.2: very important. Das Update funktioniert
+                            also with the versions of openbiblio.de.</li>
+			<li>0.5.2: The urgency depends on compatibility,
+				Bugfixes, Neuen Funktionen und dem Vertrauen in die Benutzer mit der
+                                permission to access the reports.</li>
+			<li>0.6.0, 0.6.1: The urgency depends on compatibility,
+                                bug fixes and new functions</li>
+                        <li>0.7.0, 0.7.1: Many bugfixes for new functions, especially in the
+				in der Ausleihe. Improvement of security.</li>
+			<li>0.7.3.x: Update to the current and more secure PHP 7.x
+				possible</li>
+			<li>0.8 and higher: Update to the current and more secure PHP
+				8.x possible (PHP 7.0 is no longer supported!)</li>
+            <li>0.8.1: Improved security, especially with regard to password encryption</li>
+		</ul>
+		Known limitations:
+		<ul>
+			<li>MARC is not stored perfectly in the database tables</li>
+		</ul>
+		<p>OpenBiblio test suite ran successfully on the following
+			configurations:</p>
+		<blockquote>
+			<table border=1>
+				<tr>
+					<th>Operating System:</th>
+					<td>Debian GNU/Linux 10</td>
+					<td>Debian GNU/Linux 9.13</td>
+					<td>Ubuntu 14.04 (GNU/Linux)</td>
+				</tr>
+				<tr>
+					<th>PHP Version:</th>
+					<td>8.2.15</td>
+					<td>7.4.15</td>
+					<td>7.1.13</td>
+				</tr>
+				<tr>
+					<th>Web Server:</th>
+					<td>Apache 2.4.38</td>
+					<td>Apache 2.4.25</td>
+					<td>Apache 2.4.7</td>
+				</tr>
+				<tr>
+					<th>MySql Version:</th>
+					<td>MAriaDB 10.6.16</td>
+					<td>MAriaDB 10.2.37</td>
+					<td>5.5.59</td>
+				</tr>
+			</table>
+		</blockquote>
+		<h1 id="sysReq">System requirements:</h1>
+		<ul>
+			<li>PHP version 8.0 or higher and a web server which supports it
+				(PHP 4.2 with openbiblio 7.X)</li>
+			<li>MySQL version 4.0.12 or higher</li>
+		</ul>
+		<div class="notice">This release is still compatible with
+			ancient versions of PHP and MySQL. Make sure to use versions that are
+			updated for security.</div>
+		<br>
+		<div class="new">
+			<strong>Commonly used scenarios for making a system meet the
+				requirements:</strong>
+			<ul>
+				<li>Linux: add the required software using a "package manager".</li>
+				<li>Windows: for standalone use or testing purposes use a
+					"WAMP" package like <a href="http://www.easyphp.org">EasyPHP</a> or
+					<a href="http://www.apachefriends.org/de/xampp.html">XAMPP</a>.
+				</li>
+				<li>Handpick the required software: full procedure below.</li>
+			</ul>
+			Find more reading, tutorials, etc. in the documentation section of <a
+				href="http://obiblio.sourceforge.net/">OpenBiblio's home</a>.
+		</div>
+		<h1 id="install">Install Instructions:</h1>
+		<div class="new">
+			For systems that meet the requirements: jump to <a href="#step9">step
+				9 and finish the procedure.</a>
+		</div>
+		<br>
+		<div class="new">
+			When using <i>phpMyAdmin</i> for setting up the database:
+			<ul>
+				<li>Open the SQL query window.</li>
+				<li>Run the SQL commands from <a href="#step9">step 9</a> and
+					step 10 in the procedure below. The command is the part in <b>bold</b>
+					directly after mysql
+				</li>
+				<li>Jump to <a href="#step12">step 12</a> and finish the
+					procedure.
+				</li>
+			</ul>
+		</div>
+		<h3>Procedure</h3>
+		<div class="notice">Steps 1-8: detail is out of date, but the
+			basics are still valid.</div>
+		<ol>
+			<li>To use your system for OpenBiblio you have to install a
+				webserver, PHP and MySQL. If you didn't done it already, i recommend
+				to use the package-manager with Linux or <a href="http://www.apachefriends.org/en/xampp.html">XAMPP</a>
+				for the installation with windows. (i want to thank
+				Christopher Dagleish for the hint to XAMPP :-))
+			</li>
+			<li>At Windows: Download <a
+				href="http://www.apachefriends.org/en/xampp.html">XAMPP</a> in the
+				version, which your system needs, the Lite-version is sufficient but
+				i recommend the full version nevertheless (this version offers
+				regulary updates...). Following install the downloaded XAMPP (the
+				installation is described on the site of the corresponding
+				XAMPP-version in english, so i didn't explain it here, but please
+				read everything there :-)). Now you should start XAMPP (it's
+				explained there how) and you have a running Apache, PHP and MySQL.
+				Continue now with the installation of OpenBiblio at point 7.!
+			</li>
+			<li>The following points 4-6 you only have to do, if you didn't
+				installed XAMPP (or XAMPP doesn't run):</li>
+			<li>Install a web server such as <a
+				href="http://httpd.apache.org/">Apache</a> that is compatible with
+				PHP. If you install Apache, get familiar with starting and stopping
+				your Apache Web Server. If you are running Linux your Apache server
+				should be packaged with your Linux installation and will start when
+				you start Linux.
+			</li>
+			<li>Add PHP to your web server as a CGI or a module. If you are
+				using Apache 2.0, I would highly recommend that you install PHP as a
+				module instead of a cgi application. In my experience the Apache PHP
+				module performed over 4 times faster than the cgi PHP. See <a
+				href="http://www.php.net/manual/en/install.apache2.php">Example
+					3-9. PHP and Apache 2.0 as Module</a> in the <a
+				href="http://www.php.net/manual/en/">PHP Manual</a> for more info on
+				how to install PHP as a module.
+				<p>OpenBiblio uses session data. Therefore, you will need to
+					make sure PHP sessions are turned on. Be sure to create a directory
+					for your session data on your server and specify the
+					session.save_path in your php.ini file. The default php.ini sets
+					session.save_path to "/tmp". Therefore, you have to create a
+					directory called c:/tmp (for Windows) users. However, I usually
+					create a more descriptive name inside my PHP directory and then
+					change my php.ini file to match it.
+				<p>Example php.ini directive:
+				<pre>session.save_path = d:\PHP\sessiondata</pre>
+
+				<p>
+					See section <a href="http://www.php.net/manual/en/ref.session.php">XCIII.
+						Session handling functions</a> in the PHP manual for more details on
+					PHP sessions.
+			</li>
+			<li>Install the MySQL database from <a
+				href="http://www.mysql.com/">http://www.mysql.com/</a>. Get familiar
+				with starting and stopping your MySQL Server.<br> <br>If
+				you are running Linux, MySQL should be packaged with your Linux
+				installation and will start when you start Linux.
+			</li>
+			<li>The following points are describing the installation of
+				OpenBiblio and have to be done from everything, who install
+				OpenBiblio at the first time (never mind if you use XAMPP or
+				installed apache, PHP and MySQL on a other way):</li>
+			<li>Get familiar with logging into MySQL with your admin account
+				within a DOS prompt window. You can use the following command
+				sequence as a test.
+				<blockquote>
+					<pre>
+C:\><b>c:\mysql\bin\mysql -uroot mysql</b>
+Enter password: <b>*********</b>
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8 to server version: 3.23.26-beta
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer
+
+mysql> <b>show databases;</b>
++--------------+
+| Database     |
++--------------+
+| mysql        |
++--------------+
+6 rows in set (0.00 sec)
+
+mysql> <b>exit</b>
+Bye
+
+C:\>
+</pre>
+				</blockquote>
+			</li>
+
+			<li id="step9">Create an OpenBiblio database. To do this, log
+				into MySQL with your admin account and run the following SQL
+				command.
+				<blockquote>
+					<pre>
+mysql> <b>create database OpenBiblio /*!40100 default character set utf8 */;</b>
+</pre>
+					<div class="new">
+						<strong>New:</strong> The conditional comment <b>/* ... */ </b>is
+						executed on MySQL 4.1.0 or higher and specifies utf8_general_ci as
+						the default database character set for the database created.
+					</div>
+					<br>
+					<div class="notice">
+						In old instructions latin1 was recommended, but on modern systems
+						you should use utf8 to display all needed characters.
+						<table border="1">
+							<tr>
+								<th>database&nbsp;character&nbsp;set</th>
+								<th>tab Admin: Library Settings, field <i>HTML&nbsp;Charset</i></th>
+								<th>comment</th>
+							</tr>
+							<tr>
+								<td>latin1</td>
+								<td>iso-8859-1</td>
+								<td>Problems with displaying some special characters.</td>
+							</tr>
+							<tr>
+								<td>utf8<br> <i>(recommended)</i></td>
+								<td>UTF-8<br> <i>(initial value, set by install)</i></td>                                                   
+								<td>problems with PDF layouts, will be fixed soon</td>
+							</tr>
+						</table>
+					</div>
+					<br> To check to make sure the OpenBiblio database was created
+					properly, run the following command.
+					<pre>
+mysql> <b>show databases;</b>
++--------------+
+| Database     |
++--------------+
+| mysql        |
+| OpenBiblio   |
++--------------+
+</pre>
+				</blockquote>
+			</li>
+
+			<li id="step10">Create an OpenBiblio database user. To do this,
+				login to MySQL under the admin userid and run the following SQL
+				command, substituting <i>obiblio_user</i> and <i>obiblio_password</i>
+				with the userid and password of your choice.
+				<blockquote>
+					<pre>mysql> <b>grant all privileges on OpenBiblio.* to <i>obiblio_user</i>@localhost identified by '<i>obiblio_password</i>';</b></pre>
+				</blockquote>
+				<li>Verify your OpenBiblio database and user by logging into the new
+				MySQL database under the new user.
+				<blockquote>
+					<pre>
+<b>C:\mysql\bin\mysql -u<i>obiblio_user</i> -p<i>obiblio_password</i> OpenBiblio</b>
+</pre>
+				</blockquote>
+			</li>
+
+			<li id="step11">Copy the openbiblio directory and all of its
+				contents into your web server's htdocs root or any subdirectory
+				within the htdocs root.</li>
+
+			<li id="step12">Edit the database_constants.php file (located in
+				the main openbiblio directory) with the text editor of your choice.
+				Change the username and password to match the new MySQL user and
+				password that you created in the previous steps.</li>
+                        <li id="step13">Edit the file global_constants.php (located in the shared directory of openbiblio) 
+                                with a text editor of your choice. Change the following two constants according to your choice:<br />
+                                --> OBIB_UPGRADE_KEY 
+                                --> OBIB_PWD_FORGOTTEN_KEY</li>
+			<li>Create the OpenBiblio database tables. To do this run the
+				install php script located at <a
+				href="http://localhost/openbiblio/install/index.php">http://localhost/openbiblio/install/index.php</a>.</li>
+			<li><strong>For security:</strong> Verify that the
+				display_errors setting in php.ini is 'Off' to prevent unintended
+				information disclosure.</li>
+			<li><strong>For security:</strong> Change to
+				openbiblio-directory. Change group of file database_constants.php to
+				apache-group (www-data) and change the mod of the file to 440 or 400.
+				(chgrp www-data database_constants.php; chmod 440 or chmod 400
+				database_constants.php)</li>
+			<li>Access your new library automation system at <a
+				href="http://localhost/openbiblio/index.php">http://localhost/openbiblio/index.php</a>,
+				assuming you placed the openbiblio directory in the root htdocs
+				directory. Enter "admin" for the userid and for password "Administrator#1" whenever
+				you are prompted to signon. You can change the admin password from
+				the "Admin" tab -> staff list, where you can also add more library
+				staff members.</li>
+                        <li>Under admin --> Library settings, system-relevant settings can be made, including whether or 
+                                not library users can access their personal account online.</li>
+                        <li>In order to be able to use the mail dispatch for e.g. "forgotten password function" or 
+                                "welcome message" you must enter a valid e-mail address as the sender for the 
+                                respective messages under admin --> Mail messages. messages, you must enter a valid e-mail address 
+                                as the sender. This can also differ for the individual messages may also differ.</li>
+                        <li>The "Forgot password function" can be activated under admin --> Mail settings. Here you can decide 
+                                whether either the user number/name or the e-mail address must be entered or both.</li>
+                        <li>Mail can be sent either via the php mail function or via PHPMailer, provided that the system requirements 
+                                are met and the necessary settings have been made.</li>
+                        <li>As of Openbiblio version 0.8.1, two libraries are included:<br />
+                                --> PHPMailer (URL: <a href="https://github.com/PHPMailer/PHPMailer">https://github.com/PHPMailer/PHPMailer</a>)<br />
+                                --> TinyMCE-Text-Editor (URL: <a href="https://www.tiny.cloud/docs/tinymce/latest/php-projects/">https://www.tiny.cloud/docs/tinymce/latest/php-projects/</a>)<br />
+                                If the technical system requirements of your server are met, this should be done. 
+                                If there are any difficulties, please read the information on the URLs above.</li>
+                        
+
+Translated with DeepL.com (free version)
+		</ol>
+
+		<br>
+		<h1 id="userlogin">Setup of Userlogin:</h1>
+		<p>In general, a decision must be made as to whether Openbiblio should be 
+                    a pure administration programme without online login access for users 
+                    or whether they should be given online login access. 
+                    The setting for this can be found via the ‘Admin’ tab under the ‘Library settings’ link.
+                    This setting can be made accordingly during the update to 0.8.1.</p>
+                <p>The user login will be changed from version 0.8.1. The password of the user (member) 
+                    is now stored in encrypted form in the DB table member. Previously created 
+                    passwords under the member field ‘secret’ are automatically copied during 
+                    the update and stored encrypted in the DB table member. The ‘secret’ fields 
+                    that are no longer required in the member_fields and member_fields_dm 
+                    DB tables are then deleted.</p>
+                <p>In addition, the user is blocked for a certain period of time if the access 
+                    data is entered incorrectly too often.
+                    When updating to 0.8.1, the number of failed attempts and the blocking time 
+                    can be set during the update. the blocking time can be set. Otherwise, 
+                    these settings can be changed at any time via the ‘Admin’ tab tab under 
+                    the ‘Library settings’ link.</p>
+		<p>If online login access for users has been permitted in the library settings, </p>
+		<ol>
+			<li>the user can access the user login button under the link. <a
+				href="http://localhost/openbiblio/index.html">http://localhost/openbiblio/index.html</a>.</li>
+			<li>the password must be created when the new user is created.</li>
+			<li>The user can log in via the ‘User login’ button or via the link.
+                            <a
+				href="http://localhost/openbiblio/opac/loginform.php">http://localhost/openbiblio/opac/loginform.php</a> 
+                            Via their user account, users can renew their media, place advance orders 
+                            and change their password.</li>
+		</ol>
+
+
+		<br>
+		<h1 id="update">Updating from a previous version of OpenBiblio:</h1>
+		<ol>
+			<li>Rename your old openbiblio installation directory so that
+				you don't lose its contents. We'll call the old directory
+				openbiblio-old.</li>
+			<li>Copy the new openbiblio directory and all of its contents
+				into the directory where the old openbiblio installation was.</li>
+			<li>Copy the database_constants.php file from the openbiblio-old
+				directory into the new openbiblio directory, replacing the
+				database_constants.php file there.</li>
+			<li>Backup your database. See your MySQL documentation for
+				instructions. (use mysqldump)</li>
+                        <li>The upgrade key, which is stored under the constant OBIB_UPGRADE_KEY 
+                                in the file ../shared/global_constants.php, is required for updating.</li>
+			<li>Update your OpenBiblio database tables by using the
+				conversion tool located at <a
+				href="http://localhost/openbiblio/install/index.php">http://localhost/openbiblio/install/index.php</a>,
+				assuming you placed the openbiblio directory in the root htdocs
+				directory. When installed on a remote host, the first part of the
+				address will be different. IIf the tables are already OK then
+				the tool reports this back accordingly.
+			</li>
+			<li><strong>For security:</strong> The directory openbiblio/install directory 
+                                can be deleted completely after the installation or update. 
+                                However, this is no longer necessary from version 0.8.1, 
+                                as the update process is the update process is secured via the 
+                                upgrade key.</li>
+			<li><strong>For security:</strong> Verify that the
+				display_errors setting in php.ini is 'Off' to prevent unintended
+				information disclosure.</li>
+			<li><strong>For security:</strong> Change to
+				openbiblio-directory. Change group of file database_constants.php to
+				apache-group (www-data) and change the mod of the file to 440 or 400.
+				(chgrp www-data database_constants.php; chmod 440 or chmod 400
+				database_constants.php)</li>
+		</ol>
+		<div class="notice">
+			<strong>Updates from 0.7.0:</strong> 0.8 is a bugfix release to
+			0.7.x: it can run without upgrading the database. However, step 5 is
+			recommended. This cleans unused entries from the database and lifts
+			some restrictions.*<br> 
+			<strong>Updates from 0.7.1 or higher:</strong> 0.8 is a bugfix release to 0.7.x: it can run without
+			upgrading the database.*<br>
+                        <strong>Updates from 0.7.1 or higher:</strong> 0.8.1 is an extension and 
+                        requires a database upgrade of the database. It includes the following changes:
+                        <ul>
+                            <li>Setting whether users (members) have online access to their account or not.</li>
+                            <li>Passwords for users are mandatory for online access and must fulfil certain criteria.</li>
+                            <li>User and library staff passwords are encrypted using password_hash.</li>
+                            <li>Previous secret passwords, which were stored in the DB table memmber_fields, 
+                                are copied in encrypted form to the DB table member. The fields in 
+                                member_fields and member_fields_dm that are no longer required are 
+                                deleted.</li>
+                            <li>Passwords for users are now stored in encrypted form in the member DB table by default.</li>
+                            <li>A time lock is set for login failures. Both the number of failed attempts 
+                                and the time period can be set within a certain range.</li>
+                            <li>When upgrading to 0.8.1, the new settings can be set during the upgrade process.</li>
+                            <li>The language of the update pages has been adapted.</li>
+                        </ul>
+                        
+                        
+                        <strong>*</strong> If you want to use the new presence function (from 0.8) in your existing database, you must execute the following command in your database: <i>insert into biblio_status_dm values ('pre','Presence','N');</i>
+		</div>
+	</div>
+</body>
+</html>

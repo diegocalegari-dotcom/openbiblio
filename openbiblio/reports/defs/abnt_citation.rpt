@@ -1,0 +1,22 @@
+.title "ABNT Citations"
+.category "Custom"
+.layout abnt_layout title="ABNT Citation Layout"
+.column bibid hidden
+.column author_name
+.column title
+.column edition
+.column place
+.column publisher
+.column year
+.sql
+    select
+        b.bibid,
+        b.title,
+        (SELECT bf.field_data FROM biblio_field bf WHERE b.bibid=bf.bibid AND bf.tag='100' AND bf.subfield_cd='a' LIMIT 1) as author_name,
+        (SELECT bf.field_data FROM biblio_field bf WHERE b.bibid=bf.bibid AND bf.tag='250' AND bf.subfield_cd='a' LIMIT 1) as edition,
+        (SELECT bf.field_data FROM biblio_field bf WHERE b.bibid=bf.bibid AND bf.tag='260' AND bf.subfield_cd='a' LIMIT 1) as place,
+        (SELECT bf.field_data FROM biblio_field bf WHERE b.bibid=bf.bibid AND bf.tag='260' AND bf.subfield_cd='b' LIMIT 1) as publisher,
+        (SELECT bf.field_data FROM biblio_field bf WHERE b.bibid=bf.bibid AND bf.tag='260' AND bf.subfield_cd='c' LIMIT 1) as year
+    from
+        biblio b
+.end sql

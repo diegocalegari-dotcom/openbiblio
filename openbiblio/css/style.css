@@ -1,0 +1,6 @@
+/* Print styles for landscape orientation */
+@media print {
+  @page {
+    size: landscape;
+  }
+}
