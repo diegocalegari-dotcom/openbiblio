@@ -18,7 +18,7 @@ if (isset($_SESSION["lastName"])) {
 }
 
 ?>
-<input type="button" onClick="self.location='../shared/logout.php'" value="<?php echo $navloc->getText("Logout"); ?>" class="navbutton"><br />
+<input type="button" onClick="self.location='../shared/logout.php'" value="<?php echo htmlspecialchars($navloc->getText("logout")); ?>" class="navbutton"><br />
 <?php echo '<p class="loginName">' . $sess_firstName . ' ' . $sess_lastName . '</p>'; ?>
 
 <?php if ($nav == "searchform") { ?>

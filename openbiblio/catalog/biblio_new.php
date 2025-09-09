@@ -110,7 +110,7 @@ function customFieldErrors($biblio) {
     $idx = sprintf('%03d%s', $row['tag'], $row['subfieldCd']);
     if ($row['required'] == 'Y') {
       if (!isset($fields[$idx]) or $fields[$idx]->getFieldData() == '') {
-        $errors[$idx] = 'Field is required.';
+        $errors[$idx] = 'Campo obrigatório.';
       }
     }
   }
