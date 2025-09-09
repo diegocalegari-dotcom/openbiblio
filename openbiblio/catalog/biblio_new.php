@@ -150,6 +150,79 @@ function showForm($postVars, $pageErrors=array()) {
         document.newbiblioform.posted.value='media_change';
         document.newbiblioform.submit();
       }
+
+      function fetchBookInfo() {
+        var isbnInput = document.querySelector('input[name="values[020a]"]');
+        if (!isbnInput || isbnInput.value.trim() === '') {
+          alert('Por favor, insira um ISBN primeiro.');
+          return;
+        }
+        var isbn = isbnInput.value.trim();
+
+        var button = document.querySelector('input[value="Preencher dados"]');
+        button.value = "Buscando...";
+        button.disabled = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'fetch_book_info.php?isbn=' + encodeURIComponent(isbn), true);
+        
+        xhr.onload = function () {
+          button.value = "Preencher dados";
+          button.disabled = false;
+          if (this.status == 200) {
+            try {
+              var response = JSON.parse(this.responseText);
+              if (response.error) {
+                alert('Erro: ' + response.error);
+              } else {
+                // Mapeamento de campos da resposta da API para os nomes dos inputs do formulário
+                var fieldMapping = {
+                  'title': '245a',
+                  'author': '100a',
+                  'publisher': '260b',
+                  'publicationYear': '260c',
+                  'description': '520a',
+                  'pageCount': '300a',
+                  'categories': '650a',
+                  'maturityRating': '506a'
+                };
+
+                for (var key in response) {
+                  if (response.hasOwnProperty(key) && fieldMapping[key]) {
+                    var fieldName = 'values[' + fieldMapping[key] + ']';
+                    var fieldInput = document.querySelector('input[name="' + fieldName + '"]');
+                    console.log('Attempting to set field:', fieldName, 'with value:', response[key]);
+                    console.log('Found input element:', fieldInput);
+                    if(fieldInput) {
+                      fieldInput.value = response[key];
+                    } else {
+                      // Tenta com textarea para a descrição
+                      var textareaInput = document.querySelector('textarea[name="' + fieldName + '"]');
+                      if(textareaInput) {
+                        textareaInput.value = response[key];
+                      }
+                    }
+                  }
+                }
+                alert('Dados do livro preenchidos com sucesso!');
+              }
+            } catch (e) {
+              alert('Ocorreu um erro ao processar a resposta do servidor.');
+              console.error("Server response:", this.responseText);
+            }
+          } else {
+            alert('Ocorreu um erro durante a requisição. Status: ' + this.status);
+          }
+        };
+
+        xhr.onerror = function () {
+          button.value = "Preencher dados";
+          button.disabled = false;
+          alert('Ocorreu um erro de rede.');
+        };
+
+        xhr.send();
+      }
     //-->
   </script>
 <form name="newbiblioform" method="POST"
