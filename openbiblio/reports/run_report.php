@@ -1,34 +1,36 @@
 <?php
-ob_start();
+error_log("DEBUG: run_report.php started. REQUEST: " . print_r($_REQUEST, true)); // ADD THIS
 /* This file is part of a copyrighted work; it is distributed with NO WARRANTY.
  * See the file COPYRIGHT.html for more details.
  */
 
+require_once("../shared/common.php");
+
 require_once("../classes/Report.php");
 
-if (isset($_REQUEST['rpt_name'])) {
-    $rpt = Report::load($_REQUEST['rpt_name']);
-} else if (isset($_REQUEST['rpt_type'])) {
-    list($rpt, $err) = Report::create_e($_REQUEST['rpt_type']);
+if (isset($_REQUEST['rpt_type'])) {
+    list($rpt, $err) = Report::create_e($_REQUEST['rpt_type'], $_REQUEST['rpt_type']);
     if ($err) {
-        // handle error
+        header('Location: ../reports/index.php?msg=' . U('Erro ao criar relatório: ' . $err->toStr()));
+        exit();
     }
     $errs = $rpt->initCgi_el('rpt_');
     if (!empty($errs)) {
-        // handle error
+        header('Location: ../reports/index.php?msg=' . U('Erro ao inicializar relatório: ' . implode(', ', $errs)));
+        exit();
+    }
+} else if (isset($_REQUEST['rpt_name'])) {
+    $rpt = Report::load($_REQUEST['rpt_name']);
+    if ($rpt === NULL) {
+        header('Location: ../reports/index.php?msg=' . U('Relatório não encontrado.'));
+        exit();
     }
 } else {
-    // If neither rpt_name nor rpt_type is set, redirect to reports index
-    ob_clean();
     header('Location: ../reports/index.php');
     exit();
 }
 
-if ($rpt->type() == 'abnt_citation') {
-    ob_clean();
-    header('Location: ../shared/layout.php?rpt=Report&name=abnt_layout');
-    exit();
-}
+ 
 
 require_once("../shared/common.php");
 require_once("../classes/Table.php");
@@ -53,8 +55,8 @@ if (isset($_REQUEST['rpt___format'])) {
 
 function echolink($page, $text, $newSort = NULL)
 {
-    global $tab, $nav, $format;
-    echo '<a href="../reports/run_report.php?type=previous';
+    global $tab, $nav, $format, $rpt;
+    echo '<a href="../reports/run_report.php?rpt_name=' . HURL($rpt->name);
     echo '&amp;rpt___format=' . HURL($format);
     echo '&amp;tab=' . HURL($tab) . '&amp;nav=' . HURL($nav);
     echo '&amp;page=' . HURL($page);
@@ -180,8 +182,7 @@ if ($format == 'paged') {
     </tr>
 </table>
 <?php
-
+$rpt->pageTable($page);
 
 include('../shared/footer.php');
-ob_end_flush();
 ?>

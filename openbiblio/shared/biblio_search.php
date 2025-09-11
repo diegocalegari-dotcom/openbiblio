@@ -320,7 +320,7 @@ function changePage(page,sort)
     <td style="white-space:nowrap" class="primary" valign="top" align="center" rowspan="2">
       <?php echo H($biblioQ->getCurrentRowNmbr());?>.<br />
       <a href="../shared/biblio_view.php?bibid=<?php echo HURL($biblio->getBibid());?>&amp;tab=<?php echo HURL($tab);?>">
-      <img src="../images/<?php echo HURL($materialImageFiles[$biblio->getMaterialCd()]);?>" width="20" height="20" border="0" align="bottom" alt="<?php echo H($materialTypeDm[$biblio->getMaterialCd()]);?>"></a>
+      <img src="../images/<?php echo HURL(isset($materialImageFiles[$biblio->getMaterialCd()]) ? $materialImageFiles[$biblio->getMaterialCd()] : 'default.gif');?>" width="20" height="20" border="0" align="bottom" alt="<?php echo H(isset($materialTypeDm[$biblio->getMaterialCd()]) ? $materialTypeDm[$biblio->getMaterialCd()] : 'Unknown Material');?>"></a>
     </td>
     <!-- picture   -->
      <td style="white-space:nowrap" class="primary" valign="top" align="center" rowspan="2">
@@ -338,7 +338,14 @@ function changePage(page,sort)
         </tr>
         <tr>
           <td class="noborder" width="1%" valign="top"><font class="small"><b><?php echo $loc->getText("biblioSearchTitleRemainder"); ?>:</b></font></td>
-          <td class="noborder" colspan="3"><font class="small"><?php echo H($biblio->getTitleRemainder());?></font></td>
+          <td class="noborder" colspan="3"><font class="small"><?php
+            // $titleRemainder = $biblio->getTitleRemainder(); // Temporarily commented out for debugging
+            // if (is_array($titleRemainder)) {
+            //     echo H(implode(' ', $titleRemainder)); // Implode array to string
+            // } else {
+            //     echo H($titleRemainder);
+            // }
+          ?></font></td>
         </tr>
         <tr>
           <td class="noborder" valign="top"><b><?php echo $loc->getText("biblioSearchAuthor"); ?>:</b></td>

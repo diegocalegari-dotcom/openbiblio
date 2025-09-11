@@ -46,7 +46,7 @@
 ?>
 
 <form name="reportcriteriaform" method="GET" action="../reports/run_report.php">
-<input type="hidden" name="type" value="<?php echo H($rpt->type()) ?>" />
+<input type="hidden" name="rpt_type" value="<?php echo H($rpt->type()) ?>" />
 
 <?php
   $format = array(

@@ -13,16 +13,20 @@ class DbIter extends Iter
     function __construct($results)
     {
         $this->results = $results;
+        error_log("DEBUG: DbIter __construct - results type: " . gettype($results) . ", num_rows: " . (new QueryAny)->db()->num_rows($results));
     }
     function count()
     {
         $link = (new QueryAny)->db();
-        return $link->num_rows($this->results);
+        $num_rows = $link->num_rows($this->results);
+        error_log("DEBUG: DbIter count - num_rows: " . $num_rows);
+        return $num_rows;
     }
     function next()
     {
         $link = (new QueryAny)->db();
         $r = $link->fetch_assoc($this->results);
+        error_log("DEBUG: DbIter next - fetch_assoc result: " . print_r($r, true));
         if ($r === false) {
             return NULL;
         }

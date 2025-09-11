@@ -33,6 +33,7 @@ class Layout_mbr_cards_10up {
               $lay->close();
             }
             while ($row = $rpt->each()) {
+              error_log("DEBUG: mbr_cards_10up.php - Row data: " . print_r($row, true)); // ADDED DEBUG LOG
               $lay->container('Column', array(
                 'height'=>'2in', 'width'=>'3.5in',
                 'margin-top'=>'0.14in', 'margin-bottom'=>'0.14in',
@@ -55,9 +56,13 @@ class Layout_mbr_cards_10up {
                       $lay->container('TextLines');
                         $lay->text($row['name']);
                       $lay->close();
-                      $lay->container('TextLines');
+                      if (isset($row['classification']) && isset($row['school_grade']) && $row['classification'] && $row['school_grade']) {
+                        if (isset($row['classification']) && isset($row['school_grade']) && $row['classification'] && $row['school_grade']) {
+                        $lay->container('TextLines');
                         $lay->text($row['classification']." ".$row['school_grade']);
                       $lay->close();
+                      }
+                      }
                     $lay->popFont();
                   $lay->close();
                 $lay->close();

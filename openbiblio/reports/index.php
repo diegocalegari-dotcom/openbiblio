@@ -32,7 +32,7 @@
           $reports[$rpt->category()][$rpt->type()] = $loc->getText($rpt->title());
         } else {
           $errors[] = $err;
-          var_dump($err);
+          // var_dump($err);
         }
       } 
     }

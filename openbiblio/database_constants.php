@@ -9,7 +9,7 @@
  */
 define("OBIB_HOST",     "localhost");
 define("OBIB_DATABASE", "openbiblio");
-define("OBIB_USERNAME", "openbiblio_user");
+define("OBIB_USERNAME", "root");
 define("OBIB_PWD",      "hardcore");
 define("MAIN_LOCALE",   "pt-br"); // de oder en
 /*********************************************************************************

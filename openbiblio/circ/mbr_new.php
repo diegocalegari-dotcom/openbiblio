@@ -17,6 +17,10 @@ require_once("../functions/errorFuncs.php");
 require_once("../classes/Localize.php");
 $loc = new Localize(OBIB_LOCALE, $tab);
 
+// Initialize variables to prevent "Undefined variable" warnings
+$error = '';
+$notice = '';
+
 #****************************************************************************
 #*  Checking for post vars.  Go back to form if none found.
 #****************************************************************************

@@ -60,6 +60,7 @@ $dmQ = new DmQuery();
 $dmQ->connect_e();
 $collectionDm = $dmQ->getAssoc("collection_dm");
 $materialTypeDm = $dmQ->getAssoc("material_type_dm");
+error_log("DEBUG: After getAssoc for materialTypeDm. Type: " . gettype($materialTypeDm) . ", Value: " . print_r($materialTypeDm, true));
 $biblioStatusDm = $dmQ->getAssoc("biblio_status_dm");
 $dmQ->close();
 
@@ -145,7 +146,13 @@ if ($tab == "opac") {
             <?php echo $loc->getText("biblioViewMaterialType"); ?>:
         </td>
 		<td valign="top" class="primary">
-            <?php echo H($materialTypeDm[$biblio->getMaterialCd()]); ?>
+            <?php
+            error_log("DEBUG: materialTypeDm type: " . gettype($materialTypeDm));
+            error_log("DEBUG: materialTypeDm value: " . print_r($materialTypeDm, true)); // Log full array content
+            $materialCdValue = $biblio->getMaterialCd();
+            error_log("DEBUG: materialCd value: " . $materialCdValue . " (type: " . gettype($materialCdValue) . ")");
+
+            echo H(isset($materialTypeDm[$materialCdValue]) ? $materialTypeDm[$materialCdValue] : 'Unknown Material'); ?>
         </td>
         <?php
         // patch #79 Openlibrary cover lookup (obiblio-covers.patch) uncomment below to apply

@@ -35,7 +35,7 @@ if ($username == "") {
 #*  Password edits
 #****************************************************************************
 $error_found = false;
-$pwd = $_POST["pwd"];
+    $pwd = trim($_POST["pwd"]); // ADDED trim()
 if (str_replace(' ','',$pwd) == "") {
     $error_found = true;
     $pageErrors["pwd"] = $loc->getText("loginPwdReqErr");
@@ -64,17 +64,24 @@ if (str_replace(' ','',$pwd) == "") {
         #****************************************************************************
         # Password timeout query
         #****************************************************************************
-        $PwdTimeout = new DateTimeImmutable($staff->getPwdTimeout());
+        $pwdTimeoutValue = $staff->getPwdTimeout();
+        // Check if the value is a valid date string, otherwise default to a very old date
+        if (empty($pwdTimeoutValue) || $pwdTimeoutValue === '0' || !strtotime($pwdTimeoutValue)) {
+            $PwdTimeout = new DateTimeImmutable('1970-01-01 00:00:00'); // Default to a very old date
+        } else {
+            $PwdTimeout = new DateTimeImmutable($pwdTimeoutValue);
+        }
         $PwdTimeon = $PwdTimeout->add(new DateInterval('PT' . OBIB_PWD_TIMEOUT . 'M'));
         $timeCurrent = new DateTime("now");
         if ($PwdTimeon == $timeCurrent || $PwdTimeon < $timeCurrent) {
-            if (isset($pwdHash->num_rows) == 1) {
-                $validatepassword = '';
-                $validatepassword = password_verify($pwd, $staff->_pwd);
-                if($validatepassword != 1) {
-                    $staff = false;
+            if ($PwdHashChange !== 1) {
+                if ($staff) { 
+                    $validatepassword = password_verify($pwd, $staff->getPwd());
+                    if(!$validatepassword) {
+                        $staff = false;
+                    }
                 }
-            }   
+            }
             if ($PwdHashChange === 1) {
                 $PwdHashNew = $staffQ->Change_Md5_Pwd($staff, $pwd);  //Update md5-Pwd to Pwd-Hash
                 if($PwdHashNew != 1) {

@@ -172,7 +172,7 @@ class StaffQuery extends Query {
     $pwdhash = password_hash($staff->getPwd(), PASSWORD_DEFAULT);
     $sql = $this->mkSQL("insert into staff values (null, sysdate(), sysdate(), "
                         . "%N, %Q, " 
-                        . "%Q, '1970-01-01 12:00:00', %Q, '1970-01-01 12:00:00', %Q, ",
+                        . "%Q, sysdate(), %Q, sysdate(), %Q, ",
                         $staff->getLastChangeUserid(), $staff->getUsername(),
                         $pwdhash, $staff->getPwdForgotten(), $staff->getLastName());
     if ($staff->getFirstName() == "") {

@@ -52,7 +52,7 @@ class Report
         $err = $rpt->_load_e($name, $cache);
         return array($rpt, $err);
     }
-    function load($name)
+    static function load($name)
     {
         if (!isset($_SESSION['rpt_' . $name])) {
             return NULL;
@@ -212,6 +212,7 @@ class Report
     }
     function each()
     {
+        error_log("DEBUG: Report each - called"); // ADDED DEBUG LOG
         $this->_getIter();
         return $this->iter->next();
     }

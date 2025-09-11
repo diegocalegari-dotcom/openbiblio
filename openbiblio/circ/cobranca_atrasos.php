@@ -2,16 +2,16 @@
 /* This file is part of a copyrighted work; it is distributed with NO WARRANTY.
  * See the file COPYRIGHT.html for more details.
  */
- 
-  require_once("../shared/common.php");
-  $tab = "circulation";
-  $nav = "cobranca_atrasos";
-  $helpPage = "circulation";
 
-  require_once("../shared/logincheck.php");
-  require_once("../shared/header.php");
-  require_once("../classes/Localize.php");
-  $loc = new Localize(OBIB_LOCALE, $tab);
+require_once("../shared/common.php");
+$tab = "circulation";
+$nav = "cobranca_atrasos";
+$helpPage = "circulation";
+
+require_once("../shared/logincheck.php");
+require_once("../shared/header.php");
+require_once("../classes/Localize.php");
+$loc = new Localize(OBIB_LOCALE, $tab);
 
 function extractHeaderData($pageText) {
   $data = array('CURSO' => null, 'SERIAÇÃO' => null, 'TURNO' => null, 'TURMA' => null);
@@ -48,13 +48,18 @@ function extractHeaderData($pageText) {
 }
 
 function extractStudentData($line) {
-  $fields = explode("\t", $line);
-  if (count($fields) < 4) {
+  // Check for header lines or lines that don't start with a name (often start with numbers or are short)
+  if (preg_match('/^\\d/', $line) || strlen($line) < 20 || strpos($line, "SituaçãoTelefoneSexoIdad") !== false) {
+    return null;
+  }
+
+  $parts = explode("\t", $line);
+  if (count($parts) < 4) {
     return null;
   }
 
   $student_data = array(
-    'NOME DO ESTUDANTE' => '',
+    'NOME DO ESTUDANTE' => trim($parts[0]),
     'Data de Nasc.' => '',
     'Idade' => '',
     'Sexo' => '',
@@ -65,29 +70,31 @@ function extractStudentData($line) {
     'RG' => ''
   );
 
-  $student_data['NOME DO ESTUDANTE'] = $fields[0];
-
-  // Parse field 2
-  preg_match('/(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+([MF])\s*((?:\(\d{2}\))?\s*\d{4,5}-\d{4})?/', $fields[1], $matches2);
-  if (isset($matches2[1])) {
-    $student_data['Data de Nasc.'] = $matches2[1];
-    $student_data['Idade'] = $matches2[2];
-    $student_data['Sexo'] = $matches2[3];
-    $student_data['TELEFONE'] = isset($matches2[4]) ? $matches2[4] : '';
+  // Parse Part 2: Birthdate, Age, Sex, Phone
+  if (preg_match('/(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+([MF])(.*)/', trim($parts[1]), $matches2)) {
+    $student_data['Data de Nasc.'] = trim($matches2[1]);
+    $student_data['Idade'] = trim($matches2[2]);
+    $student_data['Sexo'] = trim($matches2[3]);
+    $student_data['TELEFONE'] = trim($matches2[4]);
   }
 
-  // Parse field 3
-  preg_match('/(Matriculado|Desistente|Transferido|Excluído por|Remanejado|Concluinte|Sem)(.*)/', $fields[2], $matches3);
-  if (isset($matches3[1]) && isset($matches3[2])) {
-    $student_data['SITUAÇÃO'] = $matches3[1];
-    $student_data['CGM'] = $matches3[2];
+  // Parse Part 3: Status, Row#, CGM - THIS IS THE FIX
+  // The regex now correctly captures Status, then Row Number, then CGM
+  if (preg_match('/(Matriculado|Desistente|Transferido|Excluído por|Remanejado|Concluinte|Sem)(\d)(\d+)/', trim($parts[2]), $matches3)) {
+    $student_data['SITUAÇÃO'] = trim($matches3[1]);
+    // $matches3[2] is the row number, we don't need it
+    $student_data['CGM'] = trim($matches3[3]); // CGM is now correctly captured as the 3rd group
   }
-  
-  // Parse field 4
-  preg_match('/(\d{2}\/\d{2}\/\d{4})(.*)/', $fields[3], $matches4);
-  if (isset($matches4[1])) {
-    $student_data['Data Matricula'] = $matches4[1];
-    $student_data['RG'] = isset($matches4[2]) ? $matches4[2] : '';
+
+  // Parse Part 4: Enroll Date, RG
+  if (preg_match('/(\d{2}\/\d{2}\/\d{4})(.*)/', trim($parts[3]), $matches4)) {
+    $student_data['Data Matricula'] = trim($matches4[1]);
+    $student_data['RG'] = trim($matches4[2]);
+  }
+
+  // If CGM is still empty, it's not a valid student record for our purposes
+  if (empty($student_data['CGM'])) {
+      return null;
   }
 
   return $student_data;
@@ -152,8 +159,7 @@ if (!empty($_FILES)) {
     $pages_tarde = $pdf_tarde->getPages();
     foreach ($pages_tarde as $page) {
       $header_data = extractHeaderData($page->getText());
-      $lines = explode("
-", $page->getText());
+      $lines = explode("\n", $page->getText());
       foreach ($lines as $line) {
         $student_data = extractStudentData($line);
         if ($student_data) {
@@ -168,7 +174,7 @@ if (!empty($_FILES)) {
   if (!empty($all_students)) {
     require_once('../classes/Query.php');
     $q = new Query();
-    
+
     // Get overdue data
     $sql = "select c.bibid, c.copyid, m.mbrid, c.barcode_nmbr, "
       . "concat_ws(' ', b.call_nmbr1, b.call_nmbr2, b.call_nmbr3) as callno, "
@@ -181,14 +187,14 @@ if (!empty($_FILES)) {
       . "and c.mbrid = m.mbrid "
       . "and c.status_cd = 'out' "
       . "and c.due_back_dt < now()";
-      
+
     $overdue_results = $q->select($sql);
-    
+
     $overdue_data = array();
     while ($row = $overdue_results->next()) {
       $overdue_data[] = $row;
     }
-    
+
     // Merge student data with overdue data
     $final_report = array();
     foreach ($all_students as $student) {
@@ -230,5 +236,3 @@ if (!empty($_FILES)) {
 
 include("../shared/footer.php");
 ?>
-
-

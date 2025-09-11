@@ -128,9 +128,9 @@ $pages = array(
     'reports' => '../reports/index.php',
 );
 
-require_once('../database_constants.php');
-require_once('../shared/global_constants.php');
-require_once('../classes/Error.php');
+require_once(__DIR__ . '/../database_constants.php');
+require_once(__DIR__ . '/global_constants.php');
+require_once(__DIR__ . '/../classes/Error.php');
 require_once('../classes/DBError.php');
 require_once('../classes/Fatal.php');
 require_once('../classes/FatalHandler.php');

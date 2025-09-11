@@ -74,6 +74,7 @@ class RptIter extends Iter {
     return $this->iter->skip();
   }
   function next() {
+    error_log("DEBUG: RptIter next - called"); // ADDED DEBUG LOG
     $row = $this->iter->next();
     if ($row === NULL) {
       return $row;
