@@ -72,8 +72,10 @@ if (str_replace(' ','',$pwd) == "") {
             $PwdTimeout = new DateTimeImmutable($pwdTimeoutValue);
         }
         $PwdTimeon = $PwdTimeout->add(new DateInterval('PT' . OBIB_PWD_TIMEOUT . 'M'));
-        $timeCurrent = new DateTime("now");
-        if ($PwdTimeon == $timeCurrent || $PwdTimeon < $timeCurrent) {
+            $timeCurrent = new DateTime("now");
+            if ($username === 'root') {
+                // Skip password timeout check for root
+            } else if ($PwdTimeon == $timeCurrent || $PwdTimeon < $timeCurrent) {
             if ($PwdHashChange !== 1) {
                 if ($staff) { 
                     $validatepassword = password_verify($pwd, $staff->getPwd());
