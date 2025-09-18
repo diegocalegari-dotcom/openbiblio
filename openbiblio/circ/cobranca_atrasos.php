@@ -260,8 +260,10 @@ if (!empty($_FILES) || !empty($_POST)) {
               // Check for student data
               if (isset($data[3]) && is_numeric(trim($data[3]))) { // Assuming CGM is in column D
                   $cgm = trim($data[3]);
-                  if (in_array($cgm, $processed_cgms)) {
-                      continue; // Skip if already added
+
+                  // Prioritize search for members in desired courses
+                  if (!empty($desired_courses) && !in_array(mb_strtoupper($current_course, 'UTF-8'), $desired_courses)) {
+                      continue; // Skip if desired_courses are set and current_course is not in them
                   }
 
                   $student_data = [
@@ -276,7 +278,6 @@ if (!empty($_FILES) || !empty($_POST)) {
                   ];
 
                   $all_students[] = $student_data;
-                  $processed_cgms[] = $cgm; // Mark this CGM as processed
               }
           }
           fclose($handle);
@@ -292,6 +293,30 @@ if (!empty($_FILES) || !empty($_POST)) {
   }
 
   if (!empty($all_students)) {
+    // Deduplicate and prioritize students
+    $unique_students = [];
+    foreach ($all_students as $student) {
+        $cgm = $student['CGM'];
+        $current_course = mb_strtoupper($student['CURSO'], 'UTF-8');
+
+        if (!isset($unique_students[$cgm])) {
+            $unique_students[$cgm] = $student;
+        } else {
+            // If the student already exists, check for priority
+            $existing_course = mb_strtoupper($unique_students[$cgm]['CURSO'], 'UTF-8');
+            $is_current_priority = in_array($current_course, $desired_courses);
+            $is_existing_priority = in_array($existing_course, $desired_courses);
+
+            // If current is priority and existing is not, replace
+            if ($is_current_priority && !$is_existing_priority) {
+                $unique_students[$cgm] = $student;
+            }
+            // If both are priority or both are not, keep the first one encountered (or apply other criteria if needed)
+            // For now, if both are priority or both are not, we keep the one already there.
+        }
+    }
+    $all_students = array_values($unique_students); // Reset array keys
+
     require_once('../classes/Query.php');
     $q = new Query();
 

@@ -1,0 +1,14 @@
+# Add course names here, one per line, in order of priority.
+# Example:
+# Ensino Médio
+# Ensino Fundamental
+# Altas Habilidades
+ENS FUND 6/9 ANO
+ENSINO MEDIO FGB
+NEM EPT IF TEC ADMINISTR-ET
+NEM EPT IF TEC BIOTECN-ET
+NEM EPT IF TEC DESE SIST-ET
+NEM EPT IF TEC MARKET-ET
+NEM EPT IF TEC PROG J DIG-ET
+TEC ADMINISTRACAO -ET
+TEC DESE SISTEMAS -ET
