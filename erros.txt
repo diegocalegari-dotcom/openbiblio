@@ -1,7 +1,0 @@
-Relatório ABNT de Livros
-
-<br />
-<b>Fatal error</b>:  Uncaught Error: Call to undefined method Biblio::getAuthor() in C:\Servidor\xampp\htdocs\openbiblio\reports\abnt_report.php:36
-Stack trace:
-#0 {main}
-  thrown in <b>C:\Servidor\xampp\htdocs\openbiblio\reports\abnt_report.php</b> on line <b>36</b><br />

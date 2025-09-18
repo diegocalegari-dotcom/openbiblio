@@ -3,6 +3,21 @@
  * See the file COPYRIGHT.html for more details.
  */
 
+session_start();
+
+if (isset($_POST['mark_selected_as_lost']) && isset($_POST['lost_copies'])) {
+    require_once('../database_constants.php');
+    require_once('../classes/Query.php');
+    $q = new Query();
+    $copy_ids = array();
+    foreach ($_POST['lost_copies'] as $lost_copy) {
+        list($bibid, $copyid) = explode(',', $lost_copy);
+        $copy_ids[] = $q->mkSQL("(bibid=%N AND copyid=%N)", $bibid, $copyid);
+    }
+    $sql = "UPDATE biblio_copy SET status_cd = 'lost' WHERE " . implode(' OR ', $copy_ids);
+    $q->exec($sql);
+}
+
 require_once("../shared/common.php");
 $tab = "circulation";
 $nav = "cobranca_atrasos";
@@ -12,6 +27,19 @@ require_once("../shared/logincheck.php");
 require_once("../shared/header.php");
 require_once("../classes/Localize.php");
 $loc = new Localize(OBIB_LOCALE, $tab);
+?>
+<script>
+function checkAll(bx) {
+  var cbs = document.getElementsByName('lost_copies[]');
+  for(var i=0; i < cbs.length; i++) {
+    cbs[i].checked = bx.checked;
+  }
+}
+</script>
+<?php
+
+
+
 
 function extractHeaderData($pageText) {
   $data = array('CURSO' => null, 'SERIAÇÃO' => null, 'TURNO' => null, 'TURMA' => null);
@@ -48,66 +76,42 @@ function extractHeaderData($pageText) {
 }
 
 function extractStudentData($line) {
-  // Check for header lines or lines that don't start with a name (often start with numbers or are short)
-  if (preg_match('/^\\d/', $line) || strlen($line) < 20 || strpos($line, "SituaçãoTelefoneSexoIdad") !== false) {
+    // Ignore headers and footers
+    if (strlen($line) < 20 || strpos($line, 'Nome do Estudante') !== false || strpos($line, 'Página') !== false || strpos($line, 'GOVERNO DO ESTADO') !== false || strpos($line, 'SECRETARIA DE ESTADO') !== false || strpos($line, 'RELAÇÃO DE ALUNOS') !== false) {
+        return null;
+    }
+
+    $line_regex = "/^(\d+)\s+(\d+)\s+(.+?)\s+(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+([MF])\s+((?:\(\d{2}\))?\s*\d{4,5}-\d{4})?\s*(\S+)?\s+(Matriculado|Desistente|Transferido|Excluído por|Remanejado|Concluinte|Sem)\s+(\d{2}\/\d{2}\/\d{4})$/";
+
+    if (preg_match($line_regex, trim($line), $matches)) {
+        $student_data = [
+            'NOME DO ESTUDANTE' => trim($matches[3]),
+            'TELEFONE' => trim($matches[7]),
+            'SITUAÇÃO' => trim($matches[9]),
+            'CGM' => trim($matches[2]),
+        ];
+
+        // Basic validation
+        if (!is_numeric($student_data['CGM']) || empty($student_data['NOME DO ESTUDANTE'])) {
+            return null;
+        }
+
+        return $student_data;
+    }
+
     return null;
-  }
-
-  $parts = explode("\t", $line);
-  if (count($parts) < 4) {
-    return null;
-  }
-
-  $student_data = array(
-    'NOME DO ESTUDANTE' => trim($parts[0]),
-    'Data de Nasc.' => '',
-    'Idade' => '',
-    'Sexo' => '',
-    'TELEFONE' => '',
-    'SITUAÇÃO' => '',
-    'CGM' => '',
-    'Data Matricula' => '',
-    'RG' => ''
-  );
-
-  // Parse Part 2: Birthdate, Age, Sex, Phone
-  if (preg_match('/(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+([MF])(.*)/', trim($parts[1]), $matches2)) {
-    $student_data['Data de Nasc.'] = trim($matches2[1]);
-    $student_data['Idade'] = trim($matches2[2]);
-    $student_data['Sexo'] = trim($matches2[3]);
-    $student_data['TELEFONE'] = trim($matches2[4]);
-  }
-
-  // Parse Part 3: Status, Row#, CGM - THIS IS THE FIX
-  // The regex now correctly captures Status, then Row Number, then CGM
-  if (preg_match('/(Matriculado|Desistente|Transferido|Excluído por|Remanejado|Concluinte|Sem)(\d)(\d+)/', trim($parts[2]), $matches3)) {
-    $student_data['SITUAÇÃO'] = trim($matches3[1]);
-    // $matches3[2] is the row number, we don't need it
-    $student_data['CGM'] = trim($matches3[3]); // CGM is now correctly captured as the 3rd group
-  }
-
-  // Parse Part 4: Enroll Date, RG
-  if (preg_match('/(\d{2}\/\d{2}\/\d{4})(.*)/', trim($parts[3]), $matches4)) {
-    $student_data['Data Matricula'] = trim($matches4[1]);
-    $student_data['RG'] = trim($matches4[2]);
-  }
-
-  // If CGM is still empty, it's not a valid student record for our purposes
-  if (empty($student_data['CGM'])) {
-      return null;
-  }
-
-  return $student_data;
 }
 
 ?>
 <h1><img src="../images/circ.png" border="0" width="30" height="30" align="top"> <?php echo $loc->getText("Cobrança de Atrasos"); ?></h1>
 
+<div style="display: flex;">
+  <div style="flex: 1;">
 <form name="cobrancaform" method="POST" action="../circ/cobranca_atrasos.php" enctype="multipart/form-data">
   <table class="primary">
     <tr>
       <th valign="top" nowrap="nowrap" align="left">
-        Selecione os arquivos PDF:
+        Selecione os arquivos CSV:
       </th>
     </tr>
     <tr>
@@ -123,54 +127,170 @@ function extractStudentData($line) {
       </td>
     </tr>
     <tr>
+      <th valign="top" nowrap="nowrap" align="left">
+        Cursos desejados (separados por vírgula):
+      </th>
+    </tr>
+    <tr>
+      <td class="primary">
+        <input type="text" name="cursos_desejados" size="50" value="<?php echo isset($_POST['cursos_desejados']) ? H($_POST['cursos_desejados']) : ''; ?>">
+      </td>
+    </tr>
+    <tr>
       <td class="primary">
         <input type="submit" value="Processar" class="button">
       </td>
     </tr>
+    <tr>
+      <th valign="top" nowrap="nowrap" align="left">
+        Ordenar por:
+      </th>
+    </tr>
+    <tr>
+      <td class="primary">
+        <select name="sort_by">
+          <option value="CGM">CGM</option>
+          <option value="NOME DO ESTUDANTE">Nome</option>
+          <option value="SITUAÇÃO">Situação</option>
+          <option value="CURSO">Curso</option>
+          <option value="SERIAÇÃO">Série</option>
+          <option value="TURMA">Turma</option>
+          <option value="TURNO">Turno</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th valign="top" nowrap="nowrap" align="left">
+        Ordenar membros não encontrados por:
+      </th>
+    </tr>
+    <tr>
+      <td class="primary">
+        <select name="sort_by_unmatched">
+          <option value="member_bcode">Member Barcode</option>
+          <option value="name">Name</option>
+          <option value="days_late">Days Late</option>
+        </select>
+      </td>
+    </tr>
   </table>
 </form>
+</div>
+<div style="flex: 1; padding-left: 20px;">
+  <h3>Passo a passo:</h3>
+  <table class="primary">
+    <tr>
+      <th align="left">Passo</th>
+      <th align="left">Instrução</th>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/admin.png" width="16" height="16"></td>
+      <td class="primary">Faça o "login" no SERE.</td>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/reports.png" width="16" height="16"></td>
+      <td class="primary">Navegue até "Menu" -> "Relatórios" -> "Matrículas" -> "Alunos por turma".</td>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/catalog.png" width="16" height="16"></td>
+      <td class="primary">Em "Escolher o tipo de relatório", selecione "Por turno" e formato "XLS".</td>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/circ.png" width="16" height="16"></td>
+      <td class="primary">Salve os relatórios destacando os períodos. Por exemplo: relatório_manhã ou relatório_tarde.</td>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/book.gif" width="16" height="16"></td>
+      <td class="primary">Abra os relatórios e, em "Salvar como", salve os arquivos com o formato CSV.</td>
+    </tr>
+    <tr>
+      <td class="primary"><img src="../images/up.png" width="16" height="16"></td>
+      <td class="primary">Indique o caminho dos arquivos nos campos indicados a esquerda.</td>
+    </tr>
+  </table>
+</div>
+</div>
+<hr>
 
 <?php
-if (!empty($_FILES)) {
-  require_once('../vendor/autoload.php');
+if (!empty($_FILES) || !empty($_POST)) {
+  // Get and process the list of desired courses
+  $desired_courses_str = isset($_POST['cursos_desejados']) ? $_POST['cursos_desejados'] : '';
+  $desired_courses = array();
+  if (!empty($desired_courses_str)) {
+      // Convert to uppercase and trim whitespace for each course
+      $desired_courses = array_map('trim', explode(',', mb_strtoupper($desired_courses_str, 'UTF-8')));
+  }
+  // Remove empty entries that might result from trailing commas
+  $desired_courses = array_filter($desired_courses);
 
-  $parser = new \Smalot\PdfParser\Parser();
   $all_students = array();
+  $processed_cgms = array(); // Array to track processed CGMs to avoid duplicates
+
+  $process_csv = function($file_tmp_name, $desired_courses, &$all_students, &$processed_cgms) {
+      if (($handle = fopen($file_tmp_name, "r")) !== FALSE) {
+          $current_course = '';
+          $current_seriacao = '';
+          $current_turno = '';
+          $current_turma = '';
+
+          while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+              // Check for course, seriacao, turno, turma info
+              if (isset($data[2])) {
+                  if (strpos($data[2], 'Curso:') !== false) {
+                      $current_course = trim(str_replace('Curso:', '', $data[2]));
+                  }
+              }
+              if (isset($data[5])) {
+                  if (strpos($data[5], 'Seriação:') !== false) {
+                      $current_seriacao = trim(str_replace('Seriação:', '', $data[5]));
+                  }
+              }
+              if (isset($data[10])) {
+                  if (strpos($data[10], 'Turno:') !== false) {
+                      $current_turno = trim(str_replace('Turno:', '', $data[10]));
+                  }
+              }
+              if (isset($data[13])) {
+                  if (strpos($data[13], 'Turma:') !== false) {
+                      $current_turma = trim(str_replace('Turma:', '', $data[13]));
+                  }
+              }
+
+              // Check for student data
+              if (isset($data[3]) && is_numeric(trim($data[3]))) { // Assuming CGM is in column D
+                  $cgm = trim($data[3]);
+                  if (in_array($cgm, $processed_cgms)) {
+                      continue; // Skip if already added
+                  }
+
+                  $student_data = [
+                      'NOME DO ESTUDANTE' => isset($data[4]) ? trim($data[4]) : '',
+                      'TELEFONE' => isset($data[8]) ? trim($data[8]) : '',
+                      'SITUAÇÃO' => isset($data[12]) ? trim($data[12]) : '',
+                      'CGM' => $cgm,
+                      'CURSO' => $current_course,
+                      'SERIAÇÃO' => $current_seriacao,
+                      'TURNO' => $current_turno,
+                      'TURMA' => $current_turma,
+                  ];
+
+                  $all_students[] = $student_data;
+                  $processed_cgms[] = $cgm; // Mark this CGM as processed
+              }
+          }
+          fclose($handle);
+      }
+  };
 
   if (isset($_FILES['alunos_manha']) && $_FILES['alunos_manha']['error'] == UPLOAD_ERR_OK) {
-    $pdf_manha = $parser->parseFile($_FILES['alunos_manha']['tmp_name']);
-    $pages_manha = $pdf_manha->getPages();
-    foreach ($pages_manha as $page) {
-      $header_data = extractHeaderData($page->getText());
-      $lines = explode("
-", $page->getText());
-      foreach ($lines as $line) {
-        $student_data = extractStudentData($line);
-        if ($student_data) {
-          $student_data = array_merge($student_data, $header_data);
-          $all_students[] = $student_data;
-        }
-      }
-    }
+      $process_csv($_FILES['alunos_manha']['tmp_name'], $desired_courses, $all_students, $processed_cgms);
   }
 
   if (isset($_FILES['alunos_tarde']) && $_FILES['alunos_tarde']['error'] == UPLOAD_ERR_OK) {
-    $pdf_tarde = $parser->parseFile($_FILES['alunos_tarde']['tmp_name']);
-    $pages_tarde = $pdf_tarde->getPages();
-    foreach ($pages_tarde as $page) {
-      $header_data = extractHeaderData($page->getText());
-      $lines = explode("\n", $page->getText());
-      foreach ($lines as $line) {
-        $student_data = extractStudentData($line);
-        if ($student_data) {
-          $student_data = array_merge($student_data, $header_data);
-          $all_students[] = $student_data;
-        }
-      }
-    }
+      $process_csv($_FILES['alunos_tarde']['tmp_name'], $desired_courses, $all_students, $processed_cgms);
   }
 
-  // This block is now outside the if (!empty($all_students))
   if (!empty($all_students)) {
     require_once('../classes/Query.php');
     $q = new Query();
@@ -197,40 +317,91 @@ if (!empty($_FILES)) {
 
     // Merge student data with overdue data
     $final_report = array();
+    $unmatched_members = $overdue_data;
     foreach ($all_students as $student) {
-      foreach ($overdue_data as $overdue_item) {
+      foreach ($overdue_data as $key => $overdue_item) {
         // Assuming CGM from student data matches member_bcode from overdue data
         if ($student['CGM'] == $overdue_item['member_bcode']) {
           $merged_item = array_merge($student, $overdue_item);
           $final_report[] = $merged_item;
+          unset($unmatched_members[$key]);
         }
       }
     }
 
+    // Filter the final report by desired courses
+    if (!empty($desired_courses)) {
+        $final_report = array_filter($final_report, function($item) use ($desired_courses) {
+            return in_array(mb_strtoupper($item['CURSO'], 'UTF-8'), $desired_courses);
+        });
+    }
+
+    // Sort the final report
+    $sort_by = isset($_POST['sort_by']) ? $_POST['sort_by'] : 'CGM';
+    usort($final_report, function($a, $b) use ($sort_by) {
+        return strcoll($a[$sort_by], $b[$sort_by]);
+    });
+
     // Display final report
     if (!empty($final_report)) {
       echo "<h3>Alunos com Livros Atrasados:</h3>";
-      echo "<table class='primary'>";
-      echo "<tr><th>CGM</th><th>Nome</th><th>Telefone</th><th>Situação</th><th>Curso</th><th>Série</th><th>Turma</th><th>Turno</th><th>Título do Livro</th><th>Autor</th><th>Data de Vencimento</th></tr>";
+      echo "<p>Total de alunos encontrados: " . count($final_report) . "</p>";
+      echo "<table class='primary' style='border-collapse: collapse;'>";
+      echo "<tr><th style='border-right: 1px solid #ccc;'>CGM</th><th style='border-right: 1px solid #ccc;'>Nome</th><th style='border-right: 1px solid #ccc;'>Telefone</th><th style='border-right: 1px solid #ccc;'>Situação</th><th style='border-right: 1px solid #ccc;'>Curso</th><th style='border-right: 1px solid #ccc;'>Série</th><th style='border-right: 1px solid #ccc;'>Turma</th><th style='border-right: 1px solid #ccc;'>Turno</th><th style='border-right: 1px solid #ccc;'>Título do Livro</th><th style='border-right: 1px solid #ccc;'>Autor</th><th>Data de Vencimento</th></tr>";
       foreach ($final_report as $item) {
-        echo "<tr>";
-        echo "<td>" . H($item['CGM']) . "</td>";
-        echo "<td>" . H($item['NOME DO ESTUDANTE']) . "</td>";
-        echo "<td>" . H($item['TELEFONE']) . "</td>";
-        echo "<td>" . H($item['SITUAÇÃO']) . "</td>";
-        echo "<td>" . H($item['CURSO']) . "</td>";
-        echo "<td>" . H($item['SERIAÇÃO']) . "</td>";
-        echo "<td>" . H($item['TURMA']) . "</td>";
-        echo "<td>" . H($item['TURNO']) . "</td>";
-        echo "<td>" . H($item['title']) . "</td>";
-        echo "<td>" . H($item['author']) . "</td>";
+        echo "<tr style='border-bottom: 1px solid #ccc;'>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['CGM']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['NOME DO ESTUDANTE']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['TELEFONE']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['SITUAÇÃO']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['CURSO']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['SERIAÇÃO']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['TURMA']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['TURNO']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['title']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['author']) . "</td>";
         echo "<td>" . H($item['due_back_dt']) . "</td>";
         echo "</tr>";
       }
       echo "</table>";
     } else {
-      echo "<p>Nenhum aluno com livros atrasados encontrado.</p>";
+      echo "<p>Nenhum aluno com livros atrasados encontrado para os cursos selecionados.</p>";
     }
+    echo "<hr>";
+
+    // Display unmatched members
+    if (!empty($unmatched_members)) {
+      echo "<h3>Membros não encontrados:</h3>";
+      echo "<p>Total de membros não encontrados: " . count($unmatched_members) . "</p>";
+
+      // Sort the unmatched members
+      $sort_by_unmatched = isset($_POST['sort_by_unmatched']) ? $_POST['sort_by_unmatched'] : 'member_bcode';
+      usort($unmatched_members, function($a, $b) use ($sort_by_unmatched) {
+          if ($sort_by_unmatched == 'days_late') {
+              return $a[$sort_by_unmatched] <=> $b[$sort_by_unmatched];
+          } else {
+              return strcoll($a[$sort_by_unmatched], $b[$sort_by_unmatched]);
+          }
+      });
+
+      echo "<form method='POST' onsubmit=\"return confirm('Tem certeza que deseja marcar os livros selecionados como perdidos?');\">";
+      echo "<input type='submit' name='mark_selected_as_lost' value='Marcar Selecionados como Perdido'>";
+      echo "<table class='primary' style='border-collapse: collapse;'>";
+      echo "<tr><th><input type='checkbox' onchange=\"checkAll(this)\"></th><th style='border-right: 1px solid #ccc;'>Member Barcode</th><th style='border-right: 1px solid #ccc;'>Name</th><th style='border-right: 1px solid #ccc;'>Title</th><th>Days Late</th></tr>";
+      foreach ($unmatched_members as $item) {
+        echo "<tr style='border-bottom: 1px solid #ccc;'>";
+        echo "<td><input type='checkbox' name='lost_copies[]' value='" . H($item['bibid']) . "," . H($item['copyid']) . "'></td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['member_bcode']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['name']) . "</td>";
+        echo "<td style='border-right: 1px solid #ccc;'>" . H($item['title']) . "</td>";
+        echo "<td>" . H($item['days_late']) . "</td>";
+        echo "</tr>";
+      }
+      echo "</table>";
+      echo "</form>";
+    }
+  } else if (isset($_POST['cursos_desejados'])) {
+      echo "<p>Nenhum aluno encontrado nos arquivos CSV para os cursos selecionados.</p>";
   }
 }
 

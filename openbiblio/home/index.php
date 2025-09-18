@@ -38,6 +38,7 @@
         <li><?php echo $loc->getText("indexCircDesc2"); ?></li>
         <li><?php echo $loc->getText("indexCircDesc3"); ?></li>
         <li><?php echo $loc->getText("indexCircDesc4"); ?></li>
+        <li>Cobrança de livros atrasados com cruzamento de dados com os relatórios escolares</li>
       </ul>
     </td>
   </tr>
